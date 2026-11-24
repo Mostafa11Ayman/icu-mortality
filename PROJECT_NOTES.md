@@ -20,6 +20,12 @@ Running log of decisions and key numbers. One entry per session.
 | 2026-11-24 | Plan to exclude the 13 stays with no measurements (10 dev, 3 test) and report them separately | All survivors with no SAPS-I either; they look like unfilled records, and a model could learn "no data = survives" |
 | 2026-11-24 | Logistic regression will need imputation + has_ flags + log of skewed labs + scaling + L2, all inside CV | Missingness is informative, labs are heavily skewed, 97 feature pairs have \|r\| > 0.9 |
 | 2026-11-24 | Imbalance: class weights / rank metrics, no oversampling | 6.1 survivors per death is moderate; oversampling distorts calibration |
+| 2026-11-24 | Exclude the 13 stays with no measurements (10 dev, 3 test) from training and testing; report separately | Mostafa's decision after EDA: likely unfilled records, would teach "no data = survives" |
+| 2026-11-24 | Nested CV: hyperparameters tuned with an inner 3-fold grid inside each outer training fold; outer folds = splits.csv | Picking settings on the same folds we score would flatter the CV result |
+| 2026-11-24 | Selection rule (set before results): best pooled OOF AUPRC; simplest model not significantly worse (paired bootstrap) wins | Avoids picking a complex model for a gain that is just noise |
+| 2026-11-24 | Final model: unweighted L2 logistic regression (C = 0.03) | Best AUPRC, tied with LightGBM, simpler and well calibrated |
+| 2026-11-24 | No class weighting in the final model | Weighting gave the same ranking but inflated probabilities (mean 34% vs 14% observed) |
+| 2026-11-24 | Commit models/final_model.joblib (0.02 MB) | Small enough for git; the Streamlit demo will load it |
 
 ## Key numbers
 
@@ -45,6 +51,12 @@ Running log of decisions and key numbers. One entry per session.
 | Strongest single features (univariate AUROC, dev) | GCS_last 0.747, GCS_mean 0.694, BUN_last 0.691, Urine_mean 0.690 | 03_eda |
 | SAPS-I AUROC on dev | 0.661 | 03_eda |
 | Feature pairs with \|r\| > 0.9 | 97 (74 within the same variable) | 03_eda |
+| Modeling set (dev) | 7,990 stays, 1,122 deaths, 225 features | 04_modeling |
+| LogReg unweighted, OOF dev | AUROC 0.867 [0.855, 0.877], AUPRC 0.550 [0.518, 0.581], Brier 0.0868 | 04_modeling |
+| LightGBM, OOF dev | AUROC 0.866, AUPRC 0.547, Brier 0.0871 | 04_modeling |
+| Random forest, OOF dev | AUROC 0.850, AUPRC 0.494 (significantly worse) | 04_modeling |
+| SAPS-I on the same dev stays | AUROC 0.661, AUPRC 0.241 | 04_modeling |
+| Final model minus SAPS-I (paired bootstrap, dev) | AUROC +0.207 [+0.190, +0.224], AUPRC +0.310 [+0.282, +0.338] | 04_modeling |
 
 ## Session log
 
@@ -61,4 +73,8 @@ Running log of decisions and key numbers. One entry per session.
 - Wrote and ran `03_eda.ipynb` (dev set only). Figures: `reports/figures/03_*.png`.
 - GCS at 48 h alone (AUROC 0.747) beats SAPS-I on dev (0.661). ICU type and age are the strongest static factors; gender barely matters.
 - Missingness comes in blocks (lab panels, blood gas, arterial line vs cuff) and differs by ICU type. RespRate is mostly charted for non-ventilated patients, so missing RespRate means higher risk.
-- Next: `04_modeling.ipynb` (logistic regression, random forest, gradient boosting with 5-fold CV on dev, compared against SAPS-I).
+- Wrote `src/models.py` (pipelines, LightGBM with early stopping inside the training fold, nested CV, bootstrap metrics) and ran `04_modeling.ipynb` on dev.
+- Logistic regression, LightGBM and balanced logistic regression are statistically tied (AUROC about 0.867, AUPRC about 0.55); random forest is behind. The final model is unweighted logistic regression, saved to `models/`.
+- The model beats SAPS-I by about 0.21 AUROC on dev. Class weighting changed nothing in ranking but ruined calibration.
+- Caveat: LightGBM chose the smallest trees in the grid in every fold (edge of the grid).
+- Next: `05_evaluation.ipynb`: one-time scoring on set-c, calibration, threshold, subgroups, SHAP, leakage checks.
