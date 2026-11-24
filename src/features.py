@@ -57,7 +57,8 @@ def split_descriptors(long: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     )
     desc = (long[is_desc]
             .pivot_table(index="RecordID", columns="Parameter", values="Value", aggfunc="first")
-            .drop(columns="RecordID", errors="ignore"))
+            .drop(columns="RecordID", errors="ignore")
+            .reindex(columns=DESCRIPTORS[1:]))   # a record missing a descriptor gets NaN
     desc = desc.replace(-1, np.nan)
     for col, (lo, hi) in DESCRIPTOR_RANGES.items():
         desc[col] = desc[col].where((desc[col] > lo) & (desc[col] <= hi))
