@@ -16,6 +16,10 @@ Running log of decisions and key numbers. One entry per session.
 | 2026-11-24 | Features per variable: min, max, mean, last, count, has_ (36 variables, 225 features total) | Worst moment, overall level, state at 48 h, monitoring intensity, and whether it was measured at all |
 | 2026-11-24 | No imputation or scaling in wrangling | They learn from the data, so they must be fitted inside the training folds to avoid leakage |
 | 2026-11-24 | SAPS-I/SOFA stored next to features but never used as features; Length_of_stay/Survival dropped | Baseline comparison only / known only after the outcome |
+| 2026-11-24 | EDA on the dev set (a+b) only | Looking at the test set would bias choices made later |
+| 2026-11-24 | Plan to exclude the 13 stays with no measurements (10 dev, 3 test) and report them separately | All survivors with no SAPS-I either; they look like unfilled records, and a model could learn "no data = survives" |
+| 2026-11-24 | Logistic regression will need imputation + has_ flags + log of skewed labs + scaling + L2, all inside CV | Missingness is informative, labs are heavily skewed, 97 feature pairs have \|r\| > 0.9 |
+| 2026-11-24 | Imbalance: class weights / rank metrics, no oversampling | 6.1 survivors per death is moderate; oversampling distorts calibration |
 
 ## Key numbers
 
@@ -34,6 +38,13 @@ Running log of decisions and key numbers. One entry per session.
 | Unknown height / admission weight | 47.9% / 8.4% of stays | 02_wrangling |
 | Stays with no time series at all | 13 (all survivors) | 02_wrangling |
 | Mortality if lactate measured vs not (dev) | 18.1% vs 9.0% | 02_wrangling |
+| Dev class balance | 6,878 survived / 1,122 died (6.1 : 1) | 03_eda |
+| Mortality by age band (dev) | <40 7.7%, 40-59 9.9%, 60-69 12.4%, 70-79 14.5%, 80+ 22.6% | 03_eda |
+| Mortality by ICU type (dev) | cardiac surgery 4.6%, coronary 13.1%, surgical 14.6%, medical 19.2% | 03_eda |
+| Age cap / minors | 308 stays at exactly 90; 14 stays aged 15-17 | 03_eda |
+| Strongest single features (univariate AUROC, dev) | GCS_last 0.747, GCS_mean 0.694, BUN_last 0.691, Urine_mean 0.690 | 03_eda |
+| SAPS-I AUROC on dev | 0.661 | 03_eda |
+| Feature pairs with \|r\| > 0.9 | 97 (74 within the same variable) | 03_eda |
 
 ## Session log
 
@@ -47,4 +58,7 @@ Running log of decisions and key numbers. One entry per session.
 - Wrote `02_wrangling.ipynb` and `src/features.py`. Added `read_set()` to `src/data_io.py` (reads a whole archive in one pass; 21 s for all 12,000 stays).
 - Found two data quirks: real measurements are mixed in between the minute-0 descriptor rows (so descriptors are picked by name, not file position), and set-c has 2,403 rows with a blank parameter name.
 - Missingness is informative: lactate, pH, albumin, liver tests and troponins are measured more often in patients who die.
-- Next: `03_eda.ipynb` on the dev set (distributions, missingness patterns, mortality by age and ICU type).
+- Wrote and ran `03_eda.ipynb` (dev set only). Figures: `reports/figures/03_*.png`.
+- GCS at 48 h alone (AUROC 0.747) beats SAPS-I on dev (0.661). ICU type and age are the strongest static factors; gender barely matters.
+- Missingness comes in blocks (lab panels, blood gas, arterial line vs cuff) and differs by ICU type. RespRate is mostly charted for non-ventilated patients, so missing RespRate means higher risk.
+- Next: `04_modeling.ipynb` (logistic regression, random forest, gradient boosting with 5-fold CV on dev, compared against SAPS-I).
