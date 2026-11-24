@@ -247,5 +247,18 @@
     150309,
     150649
   ],
-  "selection_rule": "best pooled OOF AUPRC; simplest model not significantly worse (paired bootstrap)"
+  "selection_rule": "best pooled OOF AUPRC; simplest model not significantly worse (paired bootstrap)",
+  "threshold": {
+    "value": 0.13938647084763112,
+    "rule": "highest threshold with sensitivity >= 0.80 on dev OOF",
+    "dev_metrics": {
+      "sensitivity": 0.8004,
+      "specificity": 0.7753,
+      "PPV": 0.3679,
+      "NPV": 0.9596,
+      "flagged_%": 30.5507
+    }
+  },
+  "saps_threshold_sens80_dev": 13.0,
+  "model_sha256": "084b6963e7585fac18bbfea29afadbba31c6d22e7089b55f9d4fca07bd9a7888"
 }

@@ -26,6 +26,10 @@ Running log of decisions and key numbers. One entry per session.
 | 2026-11-24 | Final model: unweighted L2 logistic regression (C = 0.03) | Best AUPRC, tied with LightGBM, simpler and well calibrated |
 | 2026-11-24 | No class weighting in the final model | Weighting gave the same ranking but inflated probabilities (mean 34% vs 14% observed) |
 | 2026-11-24 | Commit models/final_model.joblib (0.02 MB) | Small enough for git; the Streamlit demo will load it |
+| 2026-11-24 | Evaluation order: leakage gate on dev, then threshold on dev, then freeze (hash + JSON), then set-c once | Nothing learned from set-c can flow back into the model |
+| 2026-11-24 | Decision threshold 0.139: highest threshold with sensitivity >= 0.80 on dev OOF | Missing a death costs more than reviewing a false alarm; Youden (0.128) gives almost the same point |
+| 2026-11-24 | Subgroup flag rule: AUROC > 0.05 below overall or O/E outside 0.8-1.25 | Stated before scoring so it cannot be bent to the results |
+| 2026-11-24 | SHAP read per variable (6 features summed) | Single linear-model SHAP values just mirror coefficients; correlated features split their weight |
 
 ## Key numbers
 
@@ -57,6 +61,14 @@ Running log of decisions and key numbers. One entry per session.
 | Random forest, OOF dev | AUROC 0.850, AUPRC 0.494 (significantly worse) | 04_modeling |
 | SAPS-I on the same dev stays | AUROC 0.661, AUPRC 0.241 | 04_modeling |
 | Final model minus SAPS-I (paired bootstrap, dev) | AUROC +0.207 [+0.190, +0.224], AUPRC +0.310 [+0.282, +0.338] | 04_modeling |
+| Leakage checks | max 2,880 min; no outcome columns; shuffled-label AUROC 0.50; last measurement 47.5 h (survivors) vs 47.6 h (deaths) | 05_evaluation |
+| **TEST (set-c) model** | **AUROC 0.879 [0.864, 0.892], AUPRC 0.564 [0.523, 0.606]**, 3,997 stays, 585 deaths | 05_evaluation |
+| TEST SAPS-I / SOFA | AUROC 0.658 / 0.636, AUPRC 0.251 / 0.254 | 05_evaluation |
+| TEST model minus SAPS-I | AUROC +0.221 [+0.197, +0.244], AUPRC +0.310 [+0.270, +0.350] | 05_evaluation |
+| TEST calibration | mean predicted 14.4% vs observed 14.6%, intercept +0.03, slope 0.95, Brier 0.089 | 05_evaluation |
+| TEST at threshold 0.139 | sens 0.812, spec 0.796, PPV 0.406, NPV 0.961, 29% flagged, NNE 2.5 (SAPS-I: PPV 0.178, 68% flagged) | 05_evaluation |
+| TEST weakest subgroups | age 80+ AUROC 0.829, coronary ICU 0.830 (none flagged) | 05_evaluation |
+| Top variables (SHAP, test) | GCS, BUN, RespRate pattern, Age, Creatinine, Urine, MechVent | 05_evaluation |
 
 ## Session log
 
@@ -77,4 +89,8 @@ Running log of decisions and key numbers. One entry per session.
 - Logistic regression, LightGBM and balanced logistic regression are statistically tied (AUROC about 0.867, AUPRC about 0.55); random forest is behind. The final model is unweighted logistic regression, saved to `models/`.
 - The model beats SAPS-I by about 0.21 AUROC on dev. Class weighting changed nothing in ranking but ruined calibration.
 - Caveat: LightGBM chose the smallest trees in the grid in every fold (edge of the grid).
-- Next: `05_evaluation.ipynb`: one-time scoring on set-c, calibration, threshold, subgroups, SHAP, leakage checks.
+- Ran `05_evaluation.ipynb`. The leakage gate passed on dev. The threshold was frozen on dev (0.139). Model hash and threshold are in `models/final_model.json`. Set-c was scored once.
+- Final answer: test AUROC 0.879 vs SAPS-I 0.658, well calibrated, no subgroup below the flag line. Test is in line with dev CV (0.867), so no overfitting.
+- After the first run I fixed two reporting issues only (no change to model, threshold or predictions): the single-feature SHAP direction check was meaningless for a linear model, so it was replaced by a variable-level check, and the SHAP background was raised from 100 to 1,000 stays.
+- Findings to explain: ventilation looks protective because 92% of cardiac-surgery patients are ventilated routinely; higher creatinine lowers risk once BUN is in the model (BUN/creatinine ratio).
+- Next: Phase 6, packaging (Streamlit demo, README with results and limitations, clean repo).
