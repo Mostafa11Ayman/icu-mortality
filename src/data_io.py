@@ -88,6 +88,45 @@ def read_record(raw_dir: Path, s: str, fname: str) -> pd.DataFrame:
     return pd.read_csv(match)
 
 
+def _iter_texts(raw_dir: Path, s: str):
+    """Yield (basename, text) for every record in a set, opening the archive once."""
+    src = find_source(raw_dir, s)
+    kind = _kind(src)
+    if kind == "zip":
+        with zipfile.ZipFile(src) as zf:
+            for n in zf.namelist():
+                name = Path(n).name
+                if n.endswith(".txt") and not name.startswith("."):
+                    yield name, zf.read(n).decode("utf-8")
+    elif kind == "tar":
+        with tarfile.open(src, "r:gz") as tf:
+            for m in tf:
+                name = Path(m.name).name
+                if m.isfile() and m.name.endswith(".txt") and not name.startswith("."):
+                    yield name, tf.extractfile(m).read().decode("utf-8")
+    else:
+        for p in sorted(src.rglob("*.txt")):
+            yield p.name, p.read_text(encoding="utf-8")
+
+
+def read_set(raw_dir: Path, s: str) -> pd.DataFrame:
+    """Read every record in a set into one long table.
+
+    Columns: RecordID, set, minutes (since ICU admission), Parameter, Value.
+    The archive is opened once, which matters for .tar.gz (no random access).
+    """
+    frames = []
+    for name, text in _iter_texts(raw_dir, s):
+        df = pd.read_csv(io.StringIO(text))
+        df.insert(0, "RecordID", int(Path(name).stem))
+        frames.append(df)
+    long = pd.concat(frames, ignore_index=True)
+    hh_mm = long["Time"].str.split(":", expand=True).astype(int)
+    long["minutes"] = hh_mm[0] * 60 + hh_mm[1]
+    long["set"] = s
+    return long[["RecordID", "set", "minutes", "Parameter", "Value"]]
+
+
 def read_outcomes(raw_dir: Path, s: str) -> pd.DataFrame:
     """Read Outcomes-<s>.txt and tag each row with its set."""
     df = pd.read_csv(raw_dir / f"Outcomes-{s}.txt")
