@@ -102,4 +102,6 @@ Running log of decisions and key numbers. One entry per session.
 - Tested the app headless in a browser (no server errors), then stopped it.
 - Rewrote README.md for recruiters (results, figures, approach, findings, limitations, reproduce, citation). Dataset licence checked on PhysioNet: ODC Attribution License v1.0.
 - Re-ran notebooks 01-05 from a clean cache: model, features, splits and test metrics are byte-identical.
-- Next (optional): MIT licence for the code, deployment to Streamlit Community Cloud, external validation on MIMIC-IV.
+- Added MIT licence (code) and `app/requirements.txt` (7 runtime packages). Fresh-clone test without data or LightGBM passed.
+- Deployed to Streamlit Community Cloud (Python 3.12): https://icu-mortality-mostafa.streamlit.app
+- Next (optional): external validation on MIMIC-IV (needs CITI training and credentialing), then project 2.

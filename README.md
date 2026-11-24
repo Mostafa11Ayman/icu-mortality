@@ -4,7 +4,7 @@
 
 Data: PhysioNet/CinC Challenge 2012 (12,000 ICU stays). Python, pandas, scikit-learn, LightGBM, SHAP, Streamlit.
 
-**Live demo:** _link coming soon_
+**Live demo:** [icu-mortality-mostafa.streamlit.app](https://icu-mortality-mostafa.streamlit.app) (research demo, not for clinical use)
 
 ## Results (test set = set-c, 3,997 stays, 585 deaths, scored once)
 
