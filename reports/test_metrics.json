@@ -1,0 +1,45 @@
+{
+  "test_set": "set-c",
+  "n_test": 3997,
+  "deaths": 585,
+  "excluded_empty_test_stays": 3,
+  "model": {
+    "AUROC": 0.8788,
+    "AUPRC": 0.5644,
+    "AUROC_lo": 0.8644,
+    "AUROC_hi": 0.8925,
+    "AUPRC_lo": 0.5235,
+    "AUPRC_hi": 0.6057,
+    "Brier": 0.089
+  },
+  "saps_i_subset_n": 3834,
+  "saps_i": {
+    "AUROC": 0.6578,
+    "AUPRC": 0.251,
+    "AUROC_lo": 0.6337,
+    "AUROC_hi": 0.6794,
+    "AUPRC_lo": 0.2209,
+    "AUPRC_hi": 0.2845
+  },
+  "calibration_model": {
+    "n": 3997.0,
+    "mean predicted": 0.1439,
+    "observed": 0.1464,
+    "intercept": 0.0304,
+    "slope": 0.946,
+    "Brier": 0.089,
+    "Brier skill": 0.2879
+  },
+  "threshold": {
+    "threshold": 0.1394,
+    "sensitivity": 0.812,
+    "specificity": 0.7963,
+    "PPV": 0.406,
+    "NPV": 0.9611,
+    "flagged_%": 29.272,
+    "TP": 475,
+    "FP": 695,
+    "FN": 110,
+    "TN": 2717
+  }
+}
