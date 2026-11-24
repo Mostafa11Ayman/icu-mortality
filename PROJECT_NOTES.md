@@ -30,6 +30,11 @@ Running log of decisions and key numbers. One entry per session.
 | 2026-11-24 | Decision threshold 0.139: highest threshold with sensitivity >= 0.80 on dev OOF | Missing a death costs more than reviewing a false alarm; Youden (0.128) gives almost the same point |
 | 2026-11-24 | Subgroup flag rule: AUROC > 0.05 below overall or O/E outside 0.8-1.25 | Stated before scoring so it cannot be bent to the results |
 | 2026-11-24 | SHAP read per variable (6 features summed) | Single linear-model SHAP values just mirror coefficients; correlated features split their weight |
+| 2026-11-24 | Demo scores an uploaded PhysioNet-format record through the same `src/features.py` pipeline (`src/predict.py`) | One code path for notebooks and app; checked on 25 real records: identical risk |
+| 2026-11-24 | Demo examples are synthetic (`app/make_examples.py`) | Raw PhysioNet records stay out of git |
+| 2026-11-24 | Explanations in the app = coefficient x transformed value, summed per variable | Exact for a linear model (equals linear SHAP with the dev mean as baseline), no SHAP dependency at run time |
+| 2026-11-24 | Pinned requirements to installed versions; dropped seaborn and xgboost (never imported) | Reproducibility; a clean re-run of notebooks 01-05 reproduces the model file byte-for-byte |
+| 2026-11-24 | `split_descriptors` reindexes to all 5 descriptors | A record missing a descriptor gets NaN instead of crashing; no change for the training data (verified by identical hashes) |
 
 ## Key numbers
 
@@ -93,4 +98,8 @@ Running log of decisions and key numbers. One entry per session.
 - Final answer: test AUROC 0.879 vs SAPS-I 0.658, well calibrated, no subgroup below the flag line. Test is in line with dev CV (0.867), so no overfitting.
 - After the first run I fixed two reporting issues only (no change to model, threshold or predictions): the single-feature SHAP direction check was meaningless for a linear model, so it was replaced by a variable-level check, and the SHAP background was raised from 100 to 1,000 stays.
 - Findings to explain: ventilation looks protective because 92% of cardiac-surgery patients are ventilated routinely; higher creatinine lowers risk once BUN is in the model (BUN/creatinine ratio).
-- Next: Phase 6, packaging (Streamlit demo, README with results and limitations, clean repo).
+- Phase 6: built `src/predict.py`, the Streamlit demo `app/streamlit_app.py` (Predict, Examples, Results, About; not-for-clinical-use banner), and 3 synthetic example records. Example risks: high-risk medical sepsis 96.9% (flagged), intermediate surgical 11.2%, low-risk cardiac surgery 0.7%. Bad files give clear messages, and records with no measurements are refused.
+- Tested the app headless in a browser (no server errors), then stopped it.
+- Rewrote README.md for recruiters (results, figures, approach, findings, limitations, reproduce, citation). Dataset licence checked on PhysioNet: ODC Attribution License v1.0.
+- Re-ran notebooks 01-05 from a clean cache: model, features, splits and test metrics are byte-identical.
+- Next (optional): MIT licence for the code, deployment to Streamlit Community Cloud, external validation on MIMIC-IV.
